@@ -2,9 +2,9 @@ OUTPUT_FILENAME = tst
 OUTPUT_BINARY_DIRECTORY = .
 
 # source files
-C_DIRECTORY = ./src
+C_DIRECTORY = .
 C_FILES += \
-	main.c
+	main.cpp
 
 # object files
 OBJECT_DIRECTORY = _build
@@ -51,7 +51,7 @@ else
 endif
 
 # Toolchain commands
-CC       		:= "$(GNU_PREFIX)gcc"
+CXX       		:= "$(GNU_PREFIX)g++"
 AS       		:= "$(GNU_PREFIX)as"
 AR       		:= "$(GNU_PREFIX)ar" -r
 LD       		:= "$(GNU_PREFIX)ld"
@@ -67,7 +67,6 @@ rmdup = $(strip $(if $1,$(firstword $1) $(call rmdup,$(filter-out $(firstword $1
 ######################################
 # CFLAGS
 ######################################
-CFLAGS += --std=gnu99
 CFLAGS += -Wall
 
 ######################################
@@ -90,14 +89,14 @@ C_SOURCE_FILES = $(addprefix $(C_DIRECTORY)/, $(C_FILES))
 C_SOURCE_FILE_NAMES = $(notdir $(C_SOURCE_FILES))
 C_PATHS = $(call rmdup, $(dir $(C_SOURCE_FILES)))
 
-C_OBJECTS = $(addprefix $(OBJECT_DIRECTORY)/, $(C_FILES:.c=.o))
+C_OBJECTS = $(addprefix $(OBJECT_DIRECTORY)/, $(C_FILES:.cpp=.o))
 OBJECTS = $(C_OBJECTS)
 OBJECTS_DIRECTORIES = $(call rmdup, $(dir $(OBJECTS)))
 
 # Sorting removes duplicates
 BUILD_DIRECTORIES := $(sort $(OBJECTS_DIRECTORIES) $(OUTPUT_BINARY_DIRECTORY))
 
-vpath %.c $(C_PATHS)
+vpath %.cpp $(C_PATHS)
 
 debug: CFLAGS += -DDEBUG
 debug: CFLAGS += -ggdb3 -O0
@@ -105,13 +104,13 @@ debug: LDFLAGS += -ggdb3 -O0
 debug: $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo [DEBUG]Linking target: $(OUTPUT_FILENAME)
 	@echo [DEBUG]CFLAGS=$(CFLAGS)
-	$(CC) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME)
+	$(CXX) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME)
 
 release: CFLAGS += -DNDEBUG -O3
 release: LDFLAGS += -O3
 release: $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo [RELEASE]Linking target: $(OUTPUT_FILENAME)
-	$(NO_ECHO)$(CC) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME)
+	$(NO_ECHO)$(CXX) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME)
 
 tests: CFLAGS += -DDEBUG
 tests: CFLAGS += -ggdb3 -O0
@@ -119,21 +118,21 @@ tests: LDFLAGS += -ggdb3 -O0
 tests: $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo [DEBUG]Linking target: $(OUTPUT_FILENAME)
 	@echo [DEBUG]CFLAGS=$(CFLAGS)
-	$(NO_ECHO)$(CC) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME)
+	$(NO_ECHO)$(CXX) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME)
 
 ## Create build directories
 $(BUILD_DIRECTORIES):
 	@$(MK) -p $@
 
 # Create objects from C SRC files
-$(OBJECT_DIRECTORY)/%.o: %.c
+$(OBJECT_DIRECTORY)/%.o: %.cpp
 	@echo Compiling C file: $(notdir $<): $(CFLAGS)
-	$(NO_ECHO)$(CC) $(CFLAGS) $(INC_PATHS) -c -o $@ $<
+	$(NO_ECHO)$(CXX) $(CFLAGS) $(INC_PATHS) -c -o $@ $<
 
 # Link
 $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME): $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo Linking target: $(OUTPUT_FILENAME)
-	$(NO_ECHO)$(CC) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME)
+	$(NO_ECHO)$(CXX) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME)
 
 leak:
 	valgrind --tool=memcheck --leak-check=full ./tst
