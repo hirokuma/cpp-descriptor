@@ -4,6 +4,7 @@ OUTPUT_BINARY_DIRECTORY = .
 # source files
 C_DIRECTORY = .
 C_FILES += \
+	mutinynet.cpp \
 	main.cpp
 
 # object files
@@ -20,7 +21,7 @@ TESTS_SOURCE_FILES = $(addprefix $(TESTS_DIRECTORY)/, $(TESTS_FILES) )
 INC_PATHS = -I${HOME}/.local/include
 
 # Link Library
-LIBS = -L ${HOME}/.local/lib -lwallycore -lsecp256k1
+LIBS = -L ${HOME}/.local/lib -lwallycore -lsecp256k1 -lboost_system -lcrypto -lssl -lcpprest
 
 CFLAGS =
 LDFLAGS =
@@ -126,7 +127,7 @@ $(BUILD_DIRECTORIES):
 
 # Create objects from C SRC files
 $(OBJECT_DIRECTORY)/%.o: %.cpp
-	@echo Compiling C file: $(notdir $<): $(CFLAGS)
+	@echo Compiling C++ file: $(notdir $<): $(CFLAGS)
 	$(NO_ECHO)$(CXX) $(CFLAGS) $(INC_PATHS) -c -o $@ $<
 
 # Link

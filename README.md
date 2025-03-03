@@ -28,11 +28,17 @@ $ make
 $ make install
 ```
 
+Install [cpprestsdk](https://github.com/microsoft/cpprestsdk) to access Esplora API
+
+```console
+$ sudo apt-get install libcpprest-dev
+```
+
 ## Build and Run
 
 ```console
-$ git clone https://github.com/hirokuma/c-descriptor.git
-$ cd c-descriptor
+$ git clone https://github.com/hirokuma/cpp-descriptor.git
+$ cd cpp-descriptor
 $ make
 $ ./tst
 ```

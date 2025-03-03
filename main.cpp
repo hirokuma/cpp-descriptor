@@ -5,9 +5,13 @@
 #include "wally_address.h"
 #include "wally_descriptor.h"
 
+#include "mutinynet.h"
+
 // https://bitcoindevkit.github.io/book-of-bdk/cookbook/quickstart/
 #define DESC_EXT    "tr([12071a7c/86'/1'/0']tpubDCaLkqfh67Qr7ZuRrUNrCYQ54sMjHfsJ4yQSGb3aBr1yqt3yXpamRBUwnGSnyNnxQYu7rqeBiPfw3mjBcFNX4ky2vhjj9bDrGstkfUbLB9T/0/*)#z3x5097m"
 #define DEST_CHG    "tr([12071a7c/86'/1'/0']tpubDCaLkqfh67Qr7ZuRrUNrCYQ54sMjHfsJ4yQSGb3aBr1yqt3yXpamRBUwnGSnyNnxQYu7rqeBiPfw3mjBcFNX4ky2vhjj9bDrGstkfUbLB9T/1/*)#n9r4jswr"
+
+#define STOP_GAP    (50)
 
 static void descriptor(void)
 {
@@ -15,6 +19,9 @@ static void descriptor(void)
 
     struct wally_descriptor *desc_ext = NULL;
     struct wally_descriptor *desc_chg = NULL;
+
+    int cnt;
+    int not_detect_cnt;
 
     // external
     rc = wally_descriptor_parse(
@@ -29,21 +36,37 @@ static void descriptor(void)
         goto cleanup;
     }
 
-    for (int i = 0; i < 3; i++) {
+    cnt = 0;
+    not_detect_cnt = 0;
+    while (1) {
         char *output = NULL;
         rc = wally_descriptor_to_address(
                 desc_ext,
-                0,  // variant
-                0,  // multi_index
-                i,  // child_num
-                0,  // flags
+                0,      // variant
+                0,      // multi_index
+                cnt,    // child_num
+                0,      // flags
                 &output);
         if (rc != WALLY_OK) {
             printf("error: wally_descriptor_to_address fail: %d\n", rc);
             goto cleanup;
         }
-        printf("output[ex %d]: %s\n", i, output);
+        bool detect = mutiny_detect_address(output);
+        if (!detect) {
+            not_detect_cnt++;
+            if (not_detect_cnt == 1) {
+                printf("output[ex %d]: %s (generated)\n", cnt, output);
+            }
+        } else {
+            not_detect_cnt = 0;
+            printf("output[ex %d]: %s\n", cnt, output);
+        }
         wally_free_string(output);
+
+        if (not_detect_cnt == STOP_GAP) {
+            break;
+        }
+        cnt++;
     }
     rc = wally_descriptor_parse(
             DESC_EXT,
@@ -70,21 +93,37 @@ static void descriptor(void)
         goto cleanup;
     }
 
-    for (int i = 0; i < 2; i++) {
-    char *output = NULL;
+    cnt = 0;
+    not_detect_cnt = 0;
+    while (1) {
+        char *output = NULL;
         rc = wally_descriptor_to_address(
                 desc_chg,
-                0,  // variant
-                0,  // multi_index
-                i,  // child_num
-                0,  // flags
+                0,      // variant
+                0,      // multi_index
+                cnt,    // child_num
+                0,      // flags
                 &output);
         if (rc != WALLY_OK) {
             printf("error: wally_descriptor_to_address fail(chg): %d\n", rc);
             goto cleanup;
         }
-        printf("output[in %d]: %s\n", i, output);
+        bool detect = mutiny_detect_address(output);
+        if (!detect) {
+            not_detect_cnt++;
+            if (not_detect_cnt == 1) {
+                printf("output[in %d]: %s (generated)\n", cnt, output);
+            }
+        } else {
+            not_detect_cnt = 0;
+            printf("output[in %d]: %s\n", cnt, output);
+        }
         wally_free_string(output);
+
+        if (not_detect_cnt == STOP_GAP) {
+            break;
+        }
+        cnt++;
     }
 
 cleanup:
