@@ -4,6 +4,7 @@
 #include "wally_core.h"
 #include "wally_address.h"
 #include "wally_descriptor.h"
+#include "wally_map.h"
 
 #include "mutinynet.h"
 
@@ -12,6 +13,15 @@
 #define DEST_CHG    "tr([12071a7c/86'/1'/0']tpubDCaLkqfh67Qr7ZuRrUNrCYQ54sMjHfsJ4yQSGb3aBr1yqt3yXpamRBUwnGSnyNnxQYu7rqeBiPfw3mjBcFNX4ky2vhjj9bDrGstkfUbLB9T/1/*)#n9r4jswr"
 
 #define STOP_GAP    (50)
+
+static void dump(const uint8_t *data, size_t sz)
+{
+    for (size_t i = 0; i < sz; i++) {
+        printf("%02x", data[i]);
+    }
+    printf("\n");
+}
+
 
 static void descriptor(void)
 {
@@ -132,6 +142,92 @@ cleanup:
     }
 }
 
+static void miniscript(void)
+{
+    int rc;
+
+    struct wally_map *vars_in = NULL;
+    struct wally_descriptor *ms = NULL;
+    uint8_t script[256];
+    size_t sz = 0;
+
+    rc = wally_map_init_alloc(4, NULL, &vars_in);
+    if (rc != WALLY_OK) {
+        printf("error: wally_map_init fail: %d\n", rc);
+        goto cleanup;
+    }
+#define KEY_1  "key_1"
+#define KEY_2  "key_2"
+#define KEY_3  "key_3"
+
+    rc = wally_map_add(vars_in,
+            (const uint8_t *)KEY_1, sizeof(KEY_1)-1,
+            (const uint8_t *)"020202020202020202020202020202020202020202020202020202020202020201", 66);
+    if (rc != WALLY_OK) {
+        printf("error: wally_map_add fail: %d\n", rc);
+        goto cleanup;
+    }
+    rc = wally_map_add(vars_in,
+            (const uint8_t *)KEY_2, sizeof(KEY_2)-1,
+            (const uint8_t *)"020202020202020202020202020202020202020202020202020202020202020202", 66);
+    if (rc != WALLY_OK) {
+        printf("error: wally_map_add fail: %d\n", rc);
+        goto cleanup;
+    }
+    rc = wally_map_add(vars_in,
+            (const uint8_t *)KEY_3, sizeof(KEY_3)-1,
+            (const uint8_t *)"020202020202020202020202020202020202020202020202020202020202020203", 66);
+    if (rc != WALLY_OK) {
+        printf("error: wally_map_add fail: %d\n", rc);
+        goto cleanup;
+    }
+    rc = wally_map_add(vars_in,
+            (const uint8_t *)"H", 1,
+            (const uint8_t *)"0303030303030303030303030303030303030303", 40);
+    if (rc != WALLY_OK) {
+        printf("error: wally_map_add fail: %d\n", rc);
+        goto cleanup;
+    }
+
+    rc = wally_descriptor_parse(
+            // "thresh(2,pk(key_1),s:pk(key_2),sln:older(12960))", //NG
+            "t:or_c(pk(key_1),and_v(v:pk(key_2),or_c(pk(key_3),v:hash160(H))))",    //OK
+            // "andor(pk(key_1),or_i(and_v(v:pkh(key_2),hash160(H)),older(1008)),pk(key_3))",   //OK
+            vars_in,
+            WALLY_NETWORK_NONE,
+            WALLY_MINISCRIPT_ONLY,
+            &ms
+    );
+    if (rc != WALLY_OK) {
+        printf("error: wally_descriptor_parse fail: %d\n", rc);
+        goto cleanup;
+    }
+
+    rc = wally_descriptor_to_script(
+        ms,
+        0,      // depth
+        0,      // index
+        0,      // variant
+        0,      // multi_index
+        0,      // child_num
+        0,      // flags
+        script, sizeof(script), &sz);
+    if (rc != WALLY_OK) {
+        printf("error: wally_descriptor_to_script fail: %d\n", rc);
+        goto cleanup;
+    }
+    printf("script=");
+    dump(script, sz);
+
+cleanup:
+    if (vars_in) {
+        wally_map_free(vars_in);
+    }
+    if (ms) {
+        wally_descriptor_free(ms);
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int rc;
@@ -142,7 +238,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    descriptor();
+    //descriptor();
+    miniscript();
 
     rc = wally_cleanup(0);
     if (rc != WALLY_OK) {
