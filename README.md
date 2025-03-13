@@ -15,12 +15,12 @@ $ sudo make install
 $ cd ..
 ```
 
-Build libwally-core with `tr()` support.
+Build libwally-core.
 
 ```console
 $ git clone https://github.com/ElementsProject/libwally-core.git
 $ cd libwally-core
-$ git checkout 7d2b2cdc2132015b37aadc41b140c5537aceeb6a
+$ git checkout -b v1.4.0 refs/tags/release_1.4.0
 
 .$ /tools/autogen.sh
 $ ./configure --prefix $HOME/.local --enable-minimal --disable-elements --enable-standard-secp --with-system-secp256k1 --disable-shared
